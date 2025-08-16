@@ -1,0 +1,27 @@
+services:
+  blog:
+    image: ghost:6.0.4
+    restart: always
+    volumes:
+      - ./data/content:/var/lib/ghost/content
+    env_file: blog.env
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ghost.rule=Host(`nocyphr.com`)" 
+      - "traefik.http.services.ghost.loadbalancer.server.port: 2368"
+    networks: 
+      - default
+      - traefik
+
+  blog_db:
+    image: mysql:8.0.32-oracle
+    restart: always
+    volumes:
+      - ./data/db:/var/lib/mysql
+    env_file: db.env
+    networks:
+      - default
+networks:
+  traefik:
+    external: true
+  default:
