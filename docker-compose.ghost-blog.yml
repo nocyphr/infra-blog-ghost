@@ -1,27 +1,39 @@
 services:
+  blog_db:
+    image: mysql:8.0
+    restart: always
+    volumes:
+      - ./data/db:/var/lib/mysql
+    env_file: db.env
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 60
+      start_period: 60s
+    networks:
+      - default
+
   blog:
     image: ghost:6.0.4
     restart: always
     volumes:
       - ./data/content:/var/lib/ghost/content
     env_file: blog.env
+    depends_on:
+      blog_db:
+        condition: service_healthy
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.ghost.rule=Host(`nocyphr.com`)" 
-      - "traefik.http.services.ghost.loadbalancer.server.port: 2368"
-    networks: 
+      - "traefik.http.routers.ghost.rule=Host(`nocyphr.com`)"
+      - "traefik.http.services.ghost.loadbalancer.server.port=2368"
+      - "traefik.docker.network=traefik"
+    networks:
       - default
       - traefik
 
-  blog_db:
-    image: mysql:8.0.32-oracle
-    restart: always
-    volumes:
-      - ./data/db:/var/lib/mysql
-    env_file: db.env
-    networks:
-      - default
 networks:
   traefik:
     external: true
   default:
+
